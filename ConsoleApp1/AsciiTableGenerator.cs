@@ -7,8 +7,10 @@ public class AsciiTableGenerator
     {
         // Create headers dynamically
         var headers = new List<string> { "Dice" };
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        
         headers.AddRange(diceList.Select((d, index) => d.ToString()));
-
+        
         // Create table
         var table = new ConsoleTable(headers.ToArray());
 
@@ -28,5 +30,8 @@ public class AsciiTableGenerator
 
         // Write the table
         table.Write(Format.Alternative);
+
+        Console.ResetColor();
+    
     }
 }

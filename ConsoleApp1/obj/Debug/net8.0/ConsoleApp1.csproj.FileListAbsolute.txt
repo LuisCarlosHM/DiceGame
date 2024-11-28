@@ -16,3 +16,4 @@ C:\Users\luis_\OneDrive\Documentos\Task3\ConsoleApp1\bin\Debug\net8.0\ConsoleTab
 C:\Users\luis_\OneDrive\Documentos\Task3\ConsoleApp1\bin\Debug\net8.0\Wcwidth.dll
 C:\Users\luis_\OneDrive\Documentos\Task3\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.csproj.AssemblyReference.cache
 C:\Users\luis_\OneDrive\Documentos\Task3\ConsoleApp1\obj\Debug\net8.0\ConsoleA.CB28C8CC.Up2Date
+C:\Users\luis_\OneDrive\Documentos\Task3\ConsoleApp1\obj\Debug\net8.0\ConsoleApp1.sourcelink.json

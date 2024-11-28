@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.XPath;
 
 public class GameLogic(List<Dice> diceList)
 {
@@ -17,11 +18,15 @@ public class GameLogic(List<Dice> diceList)
 
     private Boolean _playerTurn = false;
 
-    void DisplayMenuDice(){
+    #region Menus
+    void DisplayMenuSelectDice(){
+
+            var availableDice = _diceList.Where(dice => dice != computerDice).ToList();
+
             // Display available dice
             Console.WriteLine("\nAvailable dice:");
-            for (int i = 0; i < _diceList.Count; i++)
-                Console.WriteLine($"[{i + 1}] - {_diceList[i]}");
+            for (int i = 0; i < availableDice.Count; i++)
+                Console.WriteLine($"[{i + 1}] - {availableDice[i]}");
             
             Console.WriteLine("X - Exit");
             Console.WriteLine("H - Help");
@@ -30,30 +35,81 @@ public class GameLogic(List<Dice> diceList)
 
     static void DisplayIntroduction(){
 
-        Console.WriteLine("Welcome to the Dice Game!");
+        Console.WriteLine("\nWelcome to the Dice Game!");
         Console.WriteLine("Let's determine who makes the first move.");
-        Console.WriteLine("I selected a random value in the range 0..1 .");
+        Console.WriteLine("I selected a random value in the range 0..1\n");
     }
 
     static void DisplayInitialMenu(){
 
-        Console.WriteLine("Try to guess my selection.");
+        Console.WriteLine("\nTry to guess my selection.");
         Console.WriteLine("0 - 0");
         Console.WriteLine("1 - 1");
         Console.WriteLine("X - Exit");
-        Console.WriteLine("H - Help");
+        Console.WriteLine("H - Help\n");
         Console.Write("Your selection: ");
     }
 
-    
+    static void DisplayDiceMenu(){
+            
+            Console.WriteLine("\nChoose a dice:");
+            Console.WriteLine("0 - 0");
+            Console.WriteLine("1 - 1");
+            Console.WriteLine("2 - 2");
+            Console.WriteLine("3 - 3");
+            Console.WriteLine("4 - 4");
+            Console.WriteLine("5 - 5");
+            Console.WriteLine("X - Exit");
+            Console.WriteLine("H - Help\n");
+            Console.Write("Your selection: ");
+    }
 
+    #endregion
+    
+    #region InputProcessing
+    string ProcessInputDiceMenu(){
+
+        while(true){
+            DisplayDiceMenu();
+            string? input = Console.ReadLine()?.Trim();
+            Console.WriteLine("");
+
+            if (string.IsNullOrEmpty(input))
+            {
+                Console.WriteLine("Invalid input. Please try again.");
+                continue;
+            }
+
+            if (input == "H")
+            {
+                // Display probabilities
+                var probabilities = ProbabilityCalculator.CalculateProbabilities(_diceList);
+                AsciiTableGenerator.DisplayProbabilities(probabilities, _diceList);
+                continue;
+            }
+
+            if (input == "X")
+            {
+                Console.WriteLine("Thanks for playing!");
+                Environment.Exit(0);
+            }    
+
+            if(int.TryParse(input, out int userDiceIndex) && userDiceIndex >= 0 && userDiceIndex < 6){
+                return input;
+            }
+
+            Console.WriteLine("Invalid input. Please try again.");
+        }
+
+    }
     void ProcessInitialTossInput(int computerNumber)
     {
         string? input;
         while (true) // Loop until valid input is provided
         {
-            Console.Write("Your selection: ");
+            DisplayInitialMenu();
             input = Console.ReadLine()?.Trim();
+            Console.WriteLine("");
 
             if (input == "X")
             {
@@ -88,51 +144,12 @@ public class GameLogic(List<Dice> diceList)
         }
     }
 
-    void ChooseDice(){
-         if(_playerTurn){
-            DisplayMenuDice();
-         }
-         
-    }
-
-
-    void ProcessInputSelection(){
-        
-    }
-
-   
-
-
-    void InicializeGame()
-    {
-        DisplayIntroduction();
-
-        // Generate HMAC for computer's number
-        var (computerNumber, hmac, key) = _randomGenerator.Generate(0, 2);
-
-        Console.WriteLine($"HMAC: {hmac}");
-
-        DisplayInitialMenu();
-
-        ProcessInitialTossInput(computerNumber);
-
-        // Calculate result
-
-        Console.WriteLine($"Computer number: {computerNumber}, Key: {BitConverter.ToString(key).Replace('-', '\0')}");
-        
-    }
-
-    public void StartGame()
-    {
-        InicializeGame();
     
+    void ProcessDiceSelectionInput(){
 
-        while (true)
-        {
-  
-            ChooseDice();
-            
-            string? input = Console.ReadLine()?.Trim().ToLower();
+        while(true){
+            DisplayMenuSelectDice();
+            string? input = Console.ReadLine()?.Trim();
 
             if (string.IsNullOrEmpty(input))
             {
@@ -151,47 +168,147 @@ public class GameLogic(List<Dice> diceList)
             if (input == "X")
             {
                 Console.WriteLine("Thanks for playing!");
-                break;
+                Environment.Exit(0);
             }    
 
-            // Parse user's dice choice
-            if (int.TryParse(input, out int userDiceIndex) && userDiceIndex > 0 && userDiceIndex <= _diceList.Count)
-            {
-                var computerDiceIndex = _random.Next(_diceList.Count);
-                this.userDice = _diceList[userDiceIndex - 1];
-                this.computerDice = _diceList[computerDiceIndex];
-
-                Console.WriteLine($"You selected: {userDice}");
-                Console.WriteLine($"Computer selected: {computerDice}");
-
-                // Generate HMAC for computer's number
-                var (computerNumber, hmac, key) = _randomGenerator.Generate(1, 7);
-
-                Console.WriteLine($"HMAC: {hmac}");
-                Console.Write("Enter your number (1-6): ");
-                string? userNumberInput = Console.ReadLine()?.Trim();
-
-                if (!int.TryParse(userNumberInput, out int userNumber) || userNumber < 1 || userNumber > 6)
-                {
-                    Console.WriteLine("Invalid number. Please enter a number between 1 and 6.");
-                    continue;
-                }
-
-                // Calculate result
-                int result = (userNumber + computerNumber) % 6;
-
-                Console.WriteLine($"Result: {result}");
-                Console.WriteLine($"Computer number: {computerNumber}, Key: {BitConverter.ToString(key).Replace('-', '\0')}");
-
-                if (result > userNumber)
-                    Console.WriteLine("Computer wins!");
-                else
-                    Console.WriteLine("You win!");
+            if(int.TryParse(input, out int userDiceIndex) && userDiceIndex >= 0 && userDiceIndex < _diceList.Count){
+                userDice = _diceList[userDiceIndex];
+                break;
             }
-            else
-            {
-                Console.WriteLine("Invalid input. Please enter a valid dice number or command.");
-            }
+
+            Console.WriteLine("Invalid input. Please try again.");
         }
+    }
+
+    #endregion
+
+    #region DiceSelection
+
+    void ChooseDice()
+    {
+        if (_playerTurn)
+        {
+            PlayerChooseDice();
+            ComputerChooseDice();
+        }
+        else
+        {
+            ComputerChooseDice();
+            PlayerChooseDice();
+        }
+    }
+
+    void PlayerChooseDice()
+    {
+        ProcessDiceSelectionInput();
+        Console.WriteLine($"You selected: {userDice}");
+    }
+
+    void ComputerChooseDice()
+    {
+         // Generate a list of dice excluding the player's choice
+        var availableDice = _diceList.Where(dice => dice != userDice).ToList();
+
+        var computerDiceIndex = _random.Next(availableDice.Count);
+        computerDice = availableDice[computerDiceIndex];
+        Console.WriteLine($"Computer selected: {computerDice}");
+    }
+
+
+
+    #endregion
+
+    void InicializeGame()
+    {
+        DisplayIntroduction();
+
+        // Generate HMAC for computer's number
+        var (computerNumber, hmac, key) = _randomGenerator.Generate(0, 2);
+
+        Console.WriteLine($"HMAC: {hmac}");
+
+        ProcessInitialTossInput(computerNumber);
+
+        // Calculate result
+
+        Console.WriteLine($"Computer number: {computerNumber}, Key: {BitConverter.ToString(key).Replace('-', '\0')}");
+        
+    }
+
+
+    #region GameLogic
+
+     string[] ComputerThrowsDice(){
+
+        Console.WriteLine($"I selected randomNumber between 0...5");
+        
+        var (computerNumber, hmac, key) = _randomGenerator.Generate(1, 6);
+        Console.WriteLine($"HMAC: {hmac}");
+
+        return [computerNumber.ToString(), BitConverter.ToString(key).Replace('-', '\0')];
+    }
+
+    string UserThrowsDice(){
+        string input = ProcessInputDiceMenu();
+        return input;
+    }
+
+    static int CalculateRoundResult(int userNumber, int computerNumber){
+        Console.WriteLine($"({computerNumber} + {userNumber}) % 6 = {(userNumber + computerNumber) % 6}");
+        return (userNumber + computerNumber) % 6;
+    }
+
+    void PlayGame(){
+        int userThrow = 0, computerThrow = 0;
+        string key = "";
+        int[] scores = new int[2];
+        string[] messages = ["\nIt's your turn", "\nIt's my turn"];
+      
+
+        for(int i = 0; i < 2; i++){
+            Console.WriteLine(messages[i]);
+            string[] computerResult  = ComputerThrowsDice();
+            computerThrow = int.Parse(computerResult[0]);
+            key = computerResult[1];
+            userThrow = int.Parse(UserThrowsDice());
+            Console.WriteLine($"Computer number: {computerResult[0]}, Key: {key}");
+            scores[i] = CalculateRoundResult(userThrow, computerThrow);
+            Console.WriteLine($"Result: {scores[i]}");
+        }
+
+        #pragma warning disable CS8602 // Dereference of a possibly null reference.
+        int computerScore = computerDice.Sides[scores[1]];
+        int userScore = userDice.Sides[scores[0]];
+        #pragma warning restore CS8602 // Dereference of a possibly null reference.
+
+       
+        Console.WriteLine($"\nYour dice: {userDice} ({userScore}-[{scores[0]}])");
+        Console.WriteLine($"Computer dice: {computerDice} ({computerScore}-[{scores[1]}])");
+        
+        Console.WriteLine("");
+        if(computerScore > userScore){
+            Console.WriteLine($"({userScore} < {computerScore})");
+            Console.WriteLine("Computer wins!");
+        } else if(scores[0] == scores[1]){
+           Console.WriteLine($"({userScore} = {computerScore})");
+           Console.WriteLine("It's a draw!");
+        } else{
+            Console.WriteLine($"({userScore} > {computerScore})");
+            Console.WriteLine("You win!");
+        }
+        Console.WriteLine("");
+
+    }
+
+    #endregion
+
+    public void StartGame()
+    {
+        InicializeGame();
+
+        ChooseDice();
+
+        PlayGame();
+
     }
 }
